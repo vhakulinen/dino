@@ -1,0 +1,3 @@
+CREATE TABLE one (
+    id SERIAL PRIMARY KEY
+);

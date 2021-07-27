@@ -1,0 +1,3 @@
+CREATE TABLE third (
+    id SERIAL PRIMARY KEY
+);

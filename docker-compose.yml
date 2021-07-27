@@ -1,0 +1,9 @@
+version: '3'
+services:
+    dino-db:
+        image: 'postgres:12.4'
+        environment:
+            POSTGRES_PASSWORD: 'password'
+            POSTGRES_DB: 'dino'
+        ports:
+            - '5432:5432'
