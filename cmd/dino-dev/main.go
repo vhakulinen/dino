@@ -9,6 +9,7 @@ import (
 )
 
 func dbConnString() string {
+	// TODO(ville): Read these from somewhere.
 	return "user='postgres' password='password' dbname='dino' host='localhost' port='5432' sslmode='disable'"
 }
 

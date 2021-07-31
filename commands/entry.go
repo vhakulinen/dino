@@ -32,5 +32,6 @@ func Commands(opts ...Option) []*cobra.Command {
 
 	return []*cobra.Command{
 		MigrationsCommand(&options),
+		DatabaseCommands(&options),
 	}
 }

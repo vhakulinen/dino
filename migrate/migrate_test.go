@@ -2,7 +2,6 @@ package migrate
 
 import (
 	"context"
-	"fmt"
 	"io/ioutil"
 	"log"
 	"os"
@@ -12,44 +11,12 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/jmoiron/sqlx"
 	_ "github.com/lib/pq"
+
+	"github.com/vhakulinen/dino/dbtestutils"
 	"github.com/vhakulinen/dino/dbutils"
 )
 
 const testmigrationsPath = "testdata/testmigrations"
-
-// Creates a empty database for testing. Returns a connection to said database
-// and a close function to close the connection, and drop the database. Do not
-// manually close the returned db.
-func createTestDB(t *testing.T, dbname string) (*sqlx.DB, func(t *testing.T)) {
-	t.Helper()
-
-	connstr := "user='postgres' password='password' host='localhost' port='5432' sslmode='disable'"
-	conn, err := sqlx.Open("postgres", connstr)
-	if err != nil {
-		t.Fatalf("openTestDB: %v", err)
-	}
-	if _, err := conn.Exec(`CREATE DATABASE ` + dbname); err != nil {
-		t.Fatalf("openTestDB: %v", err)
-	}
-
-	connstr = fmt.Sprintf("user='postgres' password='password' dbname='%s' host='localhost' port='5432' sslmode='disable'", dbname)
-	db, err := sqlx.Open("postgres", connstr)
-	if err != nil {
-		t.Fatalf("openTestDB: %v", err)
-	}
-
-	return db, func(t *testing.T) {
-		if err := db.Close(); err != nil {
-			t.Errorf("openTestDB: failed to close conn: %v", err)
-		}
-
-		if _, err := conn.Exec(`DROP DATABASE ` + dbname); err != nil {
-			t.Errorf("openTestDB: failed to drop database: %v", err)
-		}
-
-		conn.Close()
-	}
-}
 
 func TestMigrationsFromFS(t *testing.T) {
 	source := os.DirFS(testmigrationsPath)
@@ -137,9 +104,9 @@ func TestMigrationSlice_ApplyAll(t *testing.T) {
 	tables := func(t *testing.T, db *sqlx.DB) []string {
 		t.Helper()
 
-		var tables []string
-		query := `SELECT table_name FROM information_schema.tables WHERE table_schema = 'public'`
-		if err := db.Select(&tables, query); err != nil {
+		// TODO(ville): Context?
+		tables, err := dbutils.QueryAllTableNames(context.TODO(), db)
+		if err != nil {
 			t.Fatal(err)
 		}
 
@@ -229,6 +196,8 @@ func TestMigrationSlice_ApplyAll(t *testing.T) {
 		},
 	}
 
+	connParams := dbtestutils.ConnectionParamsDefaults()
+
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
 			source := os.DirFS(testmigrationsPath)
@@ -239,7 +208,7 @@ func TestMigrationSlice_ApplyAll(t *testing.T) {
 
 			dbname := strings.ToLower(t.Name())
 			dbname = strings.ReplaceAll(dbname, "/", "_")
-			db, drop := createTestDB(t, dbname)
+			db, drop := dbtestutils.WithCreateDB(t, connParams, dbname)
 			defer drop(t)
 
 			tt.Run(t, db, migrations)
