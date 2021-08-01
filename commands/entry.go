@@ -5,8 +5,7 @@ import (
 
 	"github.com/jmoiron/sqlx"
 	"github.com/spf13/cobra"
-
-	"github.com/vhakulinen/dino/logger"
+	"github.com/vhakulinen/dino"
 )
 
 type OpenDBFn func() (*sqlx.DB, error)
@@ -15,7 +14,7 @@ type Options struct {
 	//Run func() error
 	MigrationsDir string
 	OpenDB        OpenDBFn
-	Logger        logger.Logger
+	Logger        dino.Logger
 }
 
 type Option func(*Options)

@@ -9,6 +9,7 @@ import (
 // Creates a new database `dbname`, and drops it afterwards. Returned function
 // will also close the returned database conn.
 func WithCreateDB(t *testing.T, params *ConnectionParams, dbname string) (*sqlx.DB, func(t *testing.T)) {
+	t.Helper()
 	mainConn, err := sqlx.Open("postgres", params.ConnString())
 	if err != nil {
 		t.Fatalf("WithCreateDB: %v", err)

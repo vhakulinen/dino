@@ -1,4 +1,5 @@
 * Migrate down
 * Fix context parameter order. `ctx` should probably be always first, but now it isnt.
 * Migrate to specific version?
+* WithFixture test helper
 * Permission checking

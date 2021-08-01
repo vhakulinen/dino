@@ -1,4 +1,4 @@
-package dbutils
+package dino
 
 import (
 	"bytes"

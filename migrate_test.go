@@ -1,4 +1,4 @@
-package migrate
+package dino
 
 import (
 	"context"
@@ -13,7 +13,6 @@ import (
 	_ "github.com/lib/pq"
 
 	"github.com/vhakulinen/dino/dbtestutils"
-	"github.com/vhakulinen/dino/dbutils"
 )
 
 const testmigrationsPath = "testdata/testmigrations"
@@ -105,7 +104,7 @@ func TestMigrationSlice_ApplyAll(t *testing.T) {
 		t.Helper()
 
 		// TODO(ville): Context?
-		tables, err := dbutils.QueryAllTableNames(context.TODO(), db)
+		tables, err := QueryAllTableNames(context.TODO(), db)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -136,7 +135,7 @@ func TestMigrationSlice_ApplyAll(t *testing.T) {
 		"initialized database": {
 			Run: func(t *testing.T, db *sqlx.DB, migrations MigrationSlice) {
 				ctx := context.TODO()
-				err := dbutils.WithTransaction(db, ctx, func(tx *sqlx.Tx) error {
+				err := WithTransaction(db, ctx, func(tx *sqlx.Tx) error {
 					return InitDB(tx)
 				})
 				if err != nil {

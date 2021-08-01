@@ -1,4 +1,4 @@
-package migrate
+package dino
 
 import (
 	"context"
@@ -11,9 +11,6 @@ import (
 	"time"
 
 	"github.com/jmoiron/sqlx"
-
-	"github.com/vhakulinen/dino/dbutils"
-	"github.com/vhakulinen/dino/logger"
 )
 
 const format = "20060102_1504"
@@ -116,10 +113,10 @@ func (slice MigrationSlice) find(num int) *Migration {
 }
 
 // Applies all pending migrations to the database.
-func (slice MigrationSlice) ApplyAll(db *sqlx.DB, logger logger.Logger) error {
+func (slice MigrationSlice) ApplyAll(db *sqlx.DB, logger Logger) error {
 	ctx := context.TODO()
 
-	err := dbutils.WithTransaction(db, ctx, func(tx *sqlx.Tx) error {
+	err := WithTransaction(db, ctx, func(tx *sqlx.Tx) error {
 		err := InitDB(tx)
 		if err != nil {
 			return err
