@@ -8,7 +8,7 @@ import (
 
 	"github.com/jmoiron/sqlx"
 	"github.com/spf13/cobra"
-	"github.com/vhakulinen/dino"
+	"github.com/vhakulinen/dino/dbutils"
 )
 
 func DatabaseCommands(opts *Options) *cobra.Command {
@@ -18,7 +18,7 @@ func DatabaseCommands(opts *Options) *cobra.Command {
 		Short: "Dump fixture directly from database",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			// TODO(ville): Read these from somewhere.
-			dump, err := dino.DumpFixture(&dino.DumpFixtureOpts{
+			dump, err := dbutils.DumpFixture(&dbutils.DumpFixtureOpts{
 				Host:     "localhost",
 				Port:     "5432",
 				Username: "postgres",
@@ -62,8 +62,8 @@ func DatabaseCommands(opts *Options) *cobra.Command {
 				return err
 			}
 
-			err = dino.WithTransaction(db, cmd.Context(), func(tx *sqlx.Tx) error {
-				return dino.LoadFixture(cmd.Context(), tx, string(contents))
+			err = dbutils.WithTransaction(db, cmd.Context(), func(tx *sqlx.Tx) error {
+				return dbutils.LoadFixture(cmd.Context(), tx, string(contents))
 			})
 
 			return err
@@ -83,9 +83,9 @@ func DatabaseCommands(opts *Options) *cobra.Command {
 				return err
 			}
 
-			err = dino.WithTransaction(db, cmd.Context(), func(tx *sqlx.Tx) error {
+			err = dbutils.WithTransaction(db, cmd.Context(), func(tx *sqlx.Tx) error {
 				opts.Logger.Printf("Truncating...")
-				return dino.TruncateAll(cmd.Context(), tx)
+				return dbutils.TruncateAll(cmd.Context(), tx)
 			})
 
 			return err

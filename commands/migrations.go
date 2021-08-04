@@ -7,7 +7,7 @@ import (
 	"strings"
 
 	"github.com/spf13/cobra"
-	"github.com/vhakulinen/dino"
+	"github.com/vhakulinen/dino/dbutils"
 )
 
 type Migration struct {
@@ -30,7 +30,7 @@ func MigrationsCommand(opts *Options) *cobra.Command {
 		Short: "Create new migration",
 		Args:  cobra.MinimumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			migrations, err := dino.MigrationsFromFS(getFS(opts))
+			migrations, err := dbutils.MigrationsFromFS(getFS(opts))
 			if err != nil {
 				return err
 			}
@@ -50,7 +50,7 @@ func MigrationsCommand(opts *Options) *cobra.Command {
 		Use:   "apply",
 		Short: "Apply all migrations",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			migrations, err := dino.MigrationsFromFS(getFS(opts))
+			migrations, err := dbutils.MigrationsFromFS(getFS(opts))
 			if err != nil {
 				return err
 			}

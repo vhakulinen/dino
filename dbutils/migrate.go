@@ -1,4 +1,4 @@
-package dino
+package dbutils
 
 import (
 	"context"
@@ -14,6 +14,10 @@ import (
 )
 
 const format = "20060102_1504"
+
+type Logger interface {
+	Printf(template string, args ...interface{})
+}
 
 type Migration struct {
 	Name string

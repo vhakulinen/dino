@@ -1,4 +1,4 @@
-package dino
+package dbutils
 
 import (
 	"context"
