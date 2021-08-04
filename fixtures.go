@@ -3,6 +3,7 @@ package dino
 import (
 	"bytes"
 	"context"
+	"errors"
 	"fmt"
 	"os"
 	"os/exec"
@@ -101,6 +102,10 @@ func TruncateAll(ctx context.Context, exec sqlx.ExtContext) error {
 	tables, err := QueryAllTableNames(ctx, exec)
 	if err != nil {
 		return err
+	}
+
+	if len(tables) == 0 {
+		return errors.New("No tables to truncate")
 	}
 
 	query := fmt.Sprintf(`TRUNCATE %s RESTART IDENTITY`, strings.Join(tables, ","))
