@@ -1,4 +1,4 @@
-package dbutils
+package dbutils_test
 
 import (
 	"context"
@@ -8,20 +8,21 @@ import (
 
 	"github.com/jmoiron/sqlx"
 	"github.com/vhakulinen/dino/dbtestutils"
+	"github.com/vhakulinen/dino/dbutils"
 )
 
 func TestWithTransaction_commit(t *testing.T) {
-	connParams := dbtestutils.ConnectionParamsDefaults()
+	connParams := defaultConnectionParams
 	dbname := strings.ToLower(t.Name())
 
-	db, drop := dbtestutils.WithCreateDB(t, connParams, dbname)
+	db, drop := dbtestutils.WithCreateDB(t, &connParams, dbname)
 	defer drop(t)
 
 	if _, err := db.Exec(`CREATE TABLE foobar (value TEXT NOT NULL);`); err != nil {
 		t.Fatal(err)
 	}
 
-	err := WithTransaction(db, context.Background(), func(tx *sqlx.Tx) error {
+	err := dbutils.WithTransaction(db, context.Background(), func(tx *sqlx.Tx) error {
 		_, err := tx.Exec(`INSERT INTO foobar VALUES ('foobar')`)
 		return err
 	})
@@ -43,17 +44,17 @@ func TestWithTransaction_commit(t *testing.T) {
 func TestWithTransaction_rollback(t *testing.T) {
 	myerr := errors.New("My error")
 
-	connParams := dbtestutils.ConnectionParamsDefaults()
+	connParams := defaultConnectionParams
 	dbname := strings.ToLower(t.Name())
 
-	db, drop := dbtestutils.WithCreateDB(t, connParams, dbname)
+	db, drop := dbtestutils.WithCreateDB(t, &connParams, dbname)
 	defer drop(t)
 
 	if _, err := db.Exec(`CREATE TABLE foobar (value TEXT NOT NULL);`); err != nil {
 		t.Fatal(err)
 	}
 
-	err := WithTransaction(db, context.Background(), func(tx *sqlx.Tx) error {
+	err := dbutils.WithTransaction(db, context.Background(), func(tx *sqlx.Tx) error {
 		_, err := tx.Exec(`INSERT INTO foobar VALUES ('foobar')`)
 		if err != nil {
 			t.Errorf("Exec failed: %v", err)

@@ -1,4 +1,4 @@
-package dbtestutils
+package dbutils
 
 import "fmt"
 
@@ -22,17 +22,4 @@ func (cp *ConnectionParams) ConnString() string {
 	)
 
 	return connstr
-}
-
-// TODO(ville): Read these variables from env or something.
-func ConnectionParamsDefaults() *ConnectionParams {
-	return &ConnectionParams{
-		Host:     "localhost",
-		Port:     5432,
-		Database: "postgres",
-
-		Username: "postgres",
-		Password: "password",
-		SSLMode:  "disable",
-	}
 }

@@ -4,11 +4,12 @@ import (
 	"testing"
 
 	"github.com/jmoiron/sqlx"
+	"github.com/vhakulinen/dino/dbutils"
 )
 
 // Creates a new database `dbname`, and drops it afterwards. Returned function
 // will also close the returned database conn.
-func WithCreateDB(t *testing.T, params *ConnectionParams, dbname string) (*sqlx.DB, func(t *testing.T)) {
+func WithCreateDB(t *testing.T, params *dbutils.ConnectionParams, dbname string) (*sqlx.DB, func(t *testing.T)) {
 	t.Helper()
 	mainConn, err := sqlx.Open("postgres", params.ConnString())
 	if err != nil {
@@ -20,7 +21,7 @@ func WithCreateDB(t *testing.T, params *ConnectionParams, dbname string) (*sqlx.
 		t.Fatalf("WithCreateDB: %v", err)
 	}
 
-	connParams := new(ConnectionParams)
+	connParams := new(dbutils.ConnectionParams)
 	*connParams = *params
 	connParams.Database = dbname
 

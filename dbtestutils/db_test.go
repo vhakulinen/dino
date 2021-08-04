@@ -8,10 +8,20 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/jmoiron/sqlx"
 	_ "github.com/lib/pq"
+	"github.com/vhakulinen/dino/dbutils"
 )
 
 func TestWithCreateDB(t *testing.T) {
-	connParams := ConnectionParamsDefaults()
+	// TODO(ville): Read these variables from env or something.
+	connParams := &dbutils.ConnectionParams{
+		Host:     "localhost",
+		Port:     5432,
+		Database: "postgres",
+
+		Username: "postgres",
+		Password: "password",
+		SSLMode:  "disable",
+	}
 
 	conn, err := sqlx.Open("postgres", connParams.ConnString())
 	if err != nil {

@@ -1,4 +1,4 @@
-package dbutils
+package dbutils_test
 
 import (
 	"context"
@@ -10,13 +10,14 @@ import (
 	_ "github.com/lib/pq"
 
 	"github.com/vhakulinen/dino/dbtestutils"
+	"github.com/vhakulinen/dino/dbutils"
 )
 
 func TestDumpFixture(t *testing.T) {
-	connParams := dbtestutils.ConnectionParamsDefaults()
+	connParams := defaultConnectionParams
 	dbname := strings.ToLower(t.Name())
 
-	db, drop := dbtestutils.WithCreateDB(t, connParams, dbname)
+	db, drop := dbtestutils.WithCreateDB(t, &connParams, dbname)
 	defer drop(t)
 
 	_, err := db.Exec(`
@@ -37,7 +38,7 @@ func TestDumpFixture(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	dump, err := DumpFixture(&DumpFixtureOpts{
+	dump, err := dbutils.DumpFixture(&dbutils.DumpFixtureOpts{
 		Host:     connParams.Host,
 		Port:     strconv.Itoa(connParams.Port),
 		Username: connParams.Username,
@@ -62,10 +63,10 @@ INSERT INTO foo (id, name) VALUES
 }
 
 func TestLoadFixture(t *testing.T) {
-	connParams := dbtestutils.ConnectionParamsDefaults()
+	connParams := defaultConnectionParams
 	dbname := strings.ToLower(t.Name())
 
-	db, drop := dbtestutils.WithCreateDB(t, connParams, dbname)
+	db, drop := dbtestutils.WithCreateDB(t, &connParams, dbname)
 	defer drop(t)
 
 	_, err := db.Exec(`
@@ -83,7 +84,7 @@ func TestLoadFixture(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	err = LoadFixture(context.TODO(), db, `
+	err = dbutils.LoadFixture(context.TODO(), db, `
 	INSERT INTO bar (id, num) VALUES
 		(1, 4),
 		(2, 9),

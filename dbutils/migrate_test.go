@@ -1,4 +1,4 @@
-package dbutils
+package dbutils_test
 
 import (
 	"context"
@@ -13,6 +13,7 @@ import (
 	_ "github.com/lib/pq"
 
 	"github.com/vhakulinen/dino/dbtestutils"
+	"github.com/vhakulinen/dino/dbutils"
 )
 
 const testmigrationsPath = "testdata/testmigrations"
@@ -20,12 +21,12 @@ const testmigrationsPath = "testdata/testmigrations"
 func TestMigrationsFromFS(t *testing.T) {
 	source := os.DirFS(testmigrationsPath)
 
-	got, err := MigrationsFromFS(source)
+	got, err := dbutils.MigrationsFromFS(source)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	expected := MigrationSlice{{
+	expected := dbutils.MigrationSlice{{
 		Name: "0001_20210726_2134_first",
 		Num:  1,
 		Up:   "CREATE TABLE one (\n    id SERIAL PRIMARY KEY\n);\n",
@@ -50,7 +51,7 @@ func TestMigrationsFromFS(t *testing.T) {
 func TestMigraitonSlice_NextNum(t *testing.T) {
 	source := os.DirFS(testmigrationsPath)
 
-	migrations, err := MigrationsFromFS(source)
+	migrations, err := dbutils.MigrationsFromFS(source)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -65,7 +66,7 @@ func TestMigraitonSlice_NextNum(t *testing.T) {
 func TestMigrationSlice_CreateNext(t *testing.T) {
 	source := os.DirFS(testmigrationsPath)
 
-	migrations, err := MigrationsFromFS(source)
+	migrations, err := dbutils.MigrationsFromFS(source)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -97,14 +98,14 @@ func TestMigrationSlice_CreateNext(t *testing.T) {
 
 func TestMigrationSlice_ApplyAll(t *testing.T) {
 	type Test struct {
-		Run func(t *testing.T, db *sqlx.DB, migrations MigrationSlice)
+		Run func(t *testing.T, db *sqlx.DB, migrations dbutils.MigrationSlice)
 	}
 
 	tables := func(t *testing.T, db *sqlx.DB) []string {
 		t.Helper()
 
 		// TODO(ville): Context?
-		tables, err := QueryAllTableNames(context.TODO(), db)
+		tables, err := dbutils.QueryAllTableNames(context.TODO(), db)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -114,7 +115,7 @@ func TestMigrationSlice_ApplyAll(t *testing.T) {
 
 	tests := map[string]Test{
 		"empty database": {
-			Run: func(t *testing.T, db *sqlx.DB, migrations MigrationSlice) {
+			Run: func(t *testing.T, db *sqlx.DB, migrations dbutils.MigrationSlice) {
 				if err := migrations.ApplyAll(db, log.Default()); err != nil {
 					t.Fatal(err)
 				}
@@ -133,10 +134,10 @@ func TestMigrationSlice_ApplyAll(t *testing.T) {
 			},
 		},
 		"initialized database": {
-			Run: func(t *testing.T, db *sqlx.DB, migrations MigrationSlice) {
+			Run: func(t *testing.T, db *sqlx.DB, migrations dbutils.MigrationSlice) {
 				ctx := context.TODO()
-				err := WithTransaction(db, ctx, func(tx *sqlx.Tx) error {
-					return InitDB(tx)
+				err := dbutils.WithTransaction(db, ctx, func(tx *sqlx.Tx) error {
+					return dbutils.InitDB(tx)
 				})
 				if err != nil {
 					t.Fatal(err)
@@ -160,7 +161,7 @@ func TestMigrationSlice_ApplyAll(t *testing.T) {
 			},
 		},
 		"partially migrated": {
-			Run: func(t *testing.T, db *sqlx.DB, migrations MigrationSlice) {
+			Run: func(t *testing.T, db *sqlx.DB, migrations dbutils.MigrationSlice) {
 				partial := migrations[:1]
 
 				if err := partial.ApplyAll(db, log.Default()); err != nil {
@@ -195,19 +196,19 @@ func TestMigrationSlice_ApplyAll(t *testing.T) {
 		},
 	}
 
-	connParams := dbtestutils.ConnectionParamsDefaults()
+	connParams := defaultConnectionParams
 
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
 			source := os.DirFS(testmigrationsPath)
-			migrations, err := MigrationsFromFS(source)
+			migrations, err := dbutils.MigrationsFromFS(source)
 			if err != nil {
 				t.Fatal(err)
 			}
 
 			dbname := strings.ToLower(t.Name())
 			dbname = strings.ReplaceAll(dbname, "/", "_")
-			db, drop := dbtestutils.WithCreateDB(t, connParams, dbname)
+			db, drop := dbtestutils.WithCreateDB(t, &connParams, dbname)
 			defer drop(t)
 
 			tt.Run(t, db, migrations)
