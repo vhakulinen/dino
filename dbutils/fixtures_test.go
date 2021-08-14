@@ -2,7 +2,6 @@ package dbutils_test
 
 import (
 	"context"
-	"strconv"
 	"strings"
 	"testing"
 
@@ -38,9 +37,9 @@ func TestDumpFixture(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	dump, err := dbutils.DumpFixture(&dbutils.DumpFixtureOpts{
+	dump, err := dbutils.DumpFixture(&dbutils.ConnectionParams{
 		Host:     connParams.Host,
-		Port:     strconv.Itoa(connParams.Port),
+		Port:     connParams.Port,
 		Username: connParams.Username,
 		Password: connParams.Password,
 		Database: dbname,

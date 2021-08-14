@@ -8,19 +8,11 @@ import (
 	"os"
 	"os/exec"
 	"regexp"
+	"strconv"
 	"strings"
 
 	"github.com/jmoiron/sqlx"
 )
-
-type DumpFixtureOpts struct {
-	Host string
-	Port string
-
-	Username string
-	Password string
-	Database string
-}
 
 var cleanRegexps = []*regexp.Regexp{
 	// pg_catalog. statements.
@@ -54,11 +46,11 @@ func LoadFixture(ctx context.Context, exec sqlx.ExtContext, fixture string) erro
 	return FixSequences(ctx, exec)
 }
 
-func DumpFixture(opts *DumpFixtureOpts) ([]byte, error) {
+func DumpFixture(opts *ConnectionParams) ([]byte, error) {
 	cmd := exec.Command(
 		"pg_dump",
 		"-h", opts.Host,
-		"-p", opts.Port,
+		"-p", strconv.Itoa(opts.Port),
 		"-d", opts.Database,
 		"-U", opts.Username,
 		"--data-only",

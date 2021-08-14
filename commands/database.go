@@ -1,30 +1,24 @@
 package commands
 
 import (
-	"errors"
 	"fmt"
 	"io"
 	"os"
 
 	"github.com/jmoiron/sqlx"
 	"github.com/spf13/cobra"
+	"github.com/spf13/viper"
 	"github.com/vhakulinen/dino/dbutils"
 )
 
-func DatabaseCommands(opts *Options) *cobra.Command {
+func DatabaseCommands(v *viper.Viper, opts *Options) *cobra.Command {
 
 	cmdDump := &cobra.Command{
 		Use:   "dump",
 		Short: "Dump fixture directly from database",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			// TODO(ville): Read these from somewhere.
-			dump, err := dbutils.DumpFixture(&dbutils.DumpFixtureOpts{
-				Host:     "localhost",
-				Port:     "5432",
-				Username: "postgres",
-				Password: "password",
-				Database: "dino",
-			})
+
+			dump, err := dbutils.DumpFixture(connParamsFromViper(v))
 
 			if err != nil {
 				return err
@@ -42,10 +36,6 @@ func DatabaseCommands(opts *Options) *cobra.Command {
 		Short: "Load fixture into the database",
 		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			if opts.OpenDB == nil {
-				return errors.New("OpenDB option missing")
-			}
-
 			f, err := os.Open(args[0])
 			if err != nil {
 				return err
@@ -57,7 +47,7 @@ func DatabaseCommands(opts *Options) *cobra.Command {
 				return err
 			}
 
-			db, err := opts.OpenDB()
+			db, err := connParamsFromViper(v).Open()
 			if err != nil {
 				return err
 			}
@@ -74,11 +64,7 @@ func DatabaseCommands(opts *Options) *cobra.Command {
 		Use:   "truncate-all",
 		Short: "Truncate all tables in the database",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			if opts.OpenDB == nil {
-				return errors.New("OpenDB option missing")
-			}
-
-			db, err := opts.OpenDB()
+			db, err := connParamsFromViper(v).Open()
 			if err != nil {
 				return err
 			}

@@ -1,6 +1,10 @@
 package dbutils
 
-import "fmt"
+import (
+	"fmt"
+
+	"github.com/jmoiron/sqlx"
+)
 
 type ConnectionParams struct {
 	Host string
@@ -22,4 +26,8 @@ func (cp *ConnectionParams) ConnString() string {
 	)
 
 	return connstr
+}
+
+func (cp *ConnectionParams) Open() (*sqlx.DB, error) {
+	return sqlx.Open("postgres", cp.ConnString())
 }

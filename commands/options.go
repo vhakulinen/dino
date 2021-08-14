@@ -1,13 +1,15 @@
 package commands
 
-func OptionMigrationsDir(dir string) Option {
-	return func(opts *Options) {
-		opts.MigrationsDir = dir
-	}
+import "github.com/vhakulinen/dino/dbutils"
+
+type Options struct {
+	Logger dbutils.Logger
 }
 
-func OptionOpenDB(fn OpenDBFn) Option {
+type Option func(*Options)
+
+func OptionLogger(logger dbutils.Logger) Option {
 	return func(opts *Options) {
-		opts.OpenDB = fn
+		opts.Logger = logger
 	}
 }

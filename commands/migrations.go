@@ -1,12 +1,12 @@
 package commands
 
 import (
-	"errors"
 	"io/fs"
 	"os"
 	"strings"
 
 	"github.com/spf13/cobra"
+	"github.com/spf13/viper"
 	"github.com/vhakulinen/dino/dbutils"
 )
 
@@ -18,11 +18,13 @@ type Migration struct {
 
 type MigrationSlice []*Migration
 
-func MigrationsCommand(opts *Options) *cobra.Command {
-	src := opts.MigrationsDir
+func MigrationsCommand(v *viper.Viper, opts *Options) *cobra.Command {
+	src := func(v *viper.Viper) string {
+		return v.GetString("dino.migrations.dir")
+	}
 
-	getFS := func(opts *Options) fs.FS {
-		return os.DirFS(src)
+	getFS := func(v *viper.Viper) fs.FS {
+		return os.DirFS(src(v))
 	}
 
 	cmdNew := &cobra.Command{
@@ -30,12 +32,12 @@ func MigrationsCommand(opts *Options) *cobra.Command {
 		Short: "Create new migration",
 		Args:  cobra.MinimumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			migrations, err := dbutils.MigrationsFromFS(getFS(opts))
+			migrations, err := dbutils.MigrationsFromFS(getFS(v))
 			if err != nil {
 				return err
 			}
 
-			m, err := migrations.CreateNext(src, strings.Join(args, "_"))
+			m, err := migrations.CreateNext(src(v), strings.Join(args, "_"))
 			if err != nil {
 				return err
 			}
@@ -50,16 +52,12 @@ func MigrationsCommand(opts *Options) *cobra.Command {
 		Use:   "apply",
 		Short: "Apply all migrations",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			migrations, err := dbutils.MigrationsFromFS(getFS(opts))
+			migrations, err := dbutils.MigrationsFromFS(getFS(v))
 			if err != nil {
 				return err
 			}
 
-			if opts.OpenDB == nil {
-				return errors.New("OpenDB option missing")
-			}
-
-			db, err := opts.OpenDB()
+			db, err := connParamsFromViper(v).Open()
 			if err != nil {
 				return err
 			}
@@ -72,8 +70,6 @@ func MigrationsCommand(opts *Options) *cobra.Command {
 		Use:   "migrations",
 		Short: "Manage migrations",
 	}
-
-	rootCmd.PersistentFlags().StringVarP(&src, "migrations-dir", "m", src, "Directory where migrations live")
 
 	rootCmd.AddCommand(cmdNew, cmdApply)
 	return rootCmd
