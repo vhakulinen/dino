@@ -136,7 +136,7 @@ func TestMigrationSlice_ApplyAll(t *testing.T) {
 		"initialized database": {
 			Run: func(t *testing.T, db *sqlx.DB, migrations dbutils.MigrationSlice) {
 				ctx := context.TODO()
-				err := dbutils.WithTransaction(db, ctx, func(tx *sqlx.Tx) error {
+				err := dbutils.WithTransaction(ctx, db, func(tx *sqlx.Tx) error {
 					return dbutils.InitDB(tx)
 				})
 				if err != nil {

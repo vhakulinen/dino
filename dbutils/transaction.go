@@ -10,7 +10,7 @@ import (
 
 type TxFunc func(tx *sqlx.Tx) error
 
-func WithTransaction(db *sqlx.DB, ctx context.Context, fn TxFunc) error {
+func WithTransaction(ctx context.Context, db *sqlx.DB, fn TxFunc) error {
 	tx, err := db.BeginTxx(ctx, nil)
 	if err != nil {
 		return err

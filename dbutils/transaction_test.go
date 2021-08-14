@@ -22,7 +22,7 @@ func TestWithTransaction_commit(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	err := dbutils.WithTransaction(db, context.Background(), func(tx *sqlx.Tx) error {
+	err := dbutils.WithTransaction(context.Background(), db, func(tx *sqlx.Tx) error {
 		_, err := tx.Exec(`INSERT INTO foobar VALUES ('foobar')`)
 		return err
 	})
@@ -54,7 +54,7 @@ func TestWithTransaction_rollback(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	err := dbutils.WithTransaction(db, context.Background(), func(tx *sqlx.Tx) error {
+	err := dbutils.WithTransaction(context.Background(), db, func(tx *sqlx.Tx) error {
 		_, err := tx.Exec(`INSERT INTO foobar VALUES ('foobar')`)
 		if err != nil {
 			t.Errorf("Exec failed: %v", err)

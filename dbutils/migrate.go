@@ -120,7 +120,7 @@ func (slice MigrationSlice) find(num int) *Migration {
 func (slice MigrationSlice) ApplyAll(db *sqlx.DB, logger Logger) error {
 	ctx := context.TODO()
 
-	err := WithTransaction(db, ctx, func(tx *sqlx.Tx) error {
+	err := WithTransaction(ctx, db, func(tx *sqlx.Tx) error {
 		err := InitDB(tx)
 		if err != nil {
 			return err
