@@ -2,7 +2,6 @@ package commands
 
 import (
 	"fmt"
-	"log"
 	"os"
 	"strings"
 
@@ -23,15 +22,9 @@ func connParamsFromViper(v *viper.Viper) *dbutils.ConnectionParams {
 	}
 }
 
-func RootCommand(cmdname string, opts ...Option) *cobra.Command {
-	options := Options{
-		Logger: log.Default(),
-	}
-
-	for _, fn := range opts {
-		fn(&options)
-	}
-
+// RootCommand gives entry point for dino's cli. Config will be non-nil, mostly
+// empty value which will be populated by the time any cobra commands are executed.
+func RootCommand(cmdname string, opts ...option) (*cobra.Command, *Config) {
 	var configFile string
 	v := viper.New()
 
@@ -58,6 +51,7 @@ func RootCommand(cmdname string, opts ...Option) *cobra.Command {
 		v.BindEnv(key, strings.ReplaceAll(strings.ToUpper(key), ".", "_"))
 	})
 
+	config := new(Config)
 	cobra.OnInitialize(func() {
 		v.SetConfigFile(configFile)
 		v.SetConfigType("toml")
@@ -66,12 +60,14 @@ func RootCommand(cmdname string, opts ...Option) *cobra.Command {
 			fmt.Printf("Can't read config file: %v\n", err)
 			os.Exit(1)
 		}
+
+		*config = configFromViper(v, opts...)
 	})
 
 	rootCmd.AddCommand(
-		MigrationsCommand(v, &options),
-		DatabaseCommands(v, &options),
+		MigrationsCommand(v, config),
+		DatabaseCommands(v, config),
 	)
 
-	return rootCmd
+	return rootCmd, config
 }

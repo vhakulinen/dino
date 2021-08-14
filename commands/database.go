@@ -11,7 +11,7 @@ import (
 	"github.com/vhakulinen/dino/dbutils"
 )
 
-func DatabaseCommands(v *viper.Viper, opts *Options) *cobra.Command {
+func DatabaseCommands(v *viper.Viper, config *Config) *cobra.Command {
 
 	cmdDump := &cobra.Command{
 		Use:   "dump",
@@ -70,7 +70,7 @@ func DatabaseCommands(v *viper.Viper, opts *Options) *cobra.Command {
 			}
 
 			err = dbutils.WithTransaction(db, cmd.Context(), func(tx *sqlx.Tx) error {
-				opts.Logger.Printf("Truncating...")
+				config.Logger.Printf("Truncating...")
 				return dbutils.TruncateAll(cmd.Context(), tx)
 			})
 

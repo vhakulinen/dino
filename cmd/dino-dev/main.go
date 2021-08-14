@@ -7,6 +7,6 @@ import (
 )
 
 func main() {
-	cmd := commands.RootCommand("dino-dev")
+	cmd, _ := commands.RootCommand("dino-dev")
 	cmd.Execute()
 }

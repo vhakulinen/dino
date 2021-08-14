@@ -2,14 +2,10 @@ package commands
 
 import "github.com/vhakulinen/dino/dbutils"
 
-type Options struct {
-	Logger dbutils.Logger
-}
+type option func(*Config)
 
-type Option func(*Options)
-
-func OptionLogger(logger dbutils.Logger) Option {
-	return func(opts *Options) {
+func OptionLogger(logger dbutils.Logger) option {
+	return func(opts *Config) {
 		opts.Logger = logger
 	}
 }

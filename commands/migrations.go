@@ -1,7 +1,6 @@
 package commands
 
 import (
-	"io/fs"
 	"os"
 	"strings"
 
@@ -18,31 +17,23 @@ type Migration struct {
 
 type MigrationSlice []*Migration
 
-func MigrationsCommand(v *viper.Viper, opts *Options) *cobra.Command {
-	src := func(v *viper.Viper) string {
-		return v.GetString("dino.migrations.dir")
-	}
-
-	getFS := func(v *viper.Viper) fs.FS {
-		return os.DirFS(src(v))
-	}
-
+func MigrationsCommand(v *viper.Viper, config *Config) *cobra.Command {
 	cmdNew := &cobra.Command{
 		Use:   "new [migration name]",
 		Short: "Create new migration",
 		Args:  cobra.MinimumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			migrations, err := dbutils.MigrationsFromFS(getFS(v))
+			migrations, err := dbutils.MigrationsFromFS(os.DirFS(config.MigrationsDir))
 			if err != nil {
 				return err
 			}
 
-			m, err := migrations.CreateNext(src(v), strings.Join(args, "_"))
+			m, err := migrations.CreateNext(config.MigrationsDir, strings.Join(args, "_"))
 			if err != nil {
 				return err
 			}
 
-			opts.Logger.Printf("Created a new migration '%s'", m.Name)
+			config.Logger.Printf("Created a new migration '%s'", m.Name)
 
 			return nil
 		},
@@ -52,7 +43,7 @@ func MigrationsCommand(v *viper.Viper, opts *Options) *cobra.Command {
 		Use:   "apply",
 		Short: "Apply all migrations",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			migrations, err := dbutils.MigrationsFromFS(getFS(v))
+			migrations, err := dbutils.MigrationsFromFS(os.DirFS(config.MigrationsDir))
 			if err != nil {
 				return err
 			}
@@ -62,7 +53,7 @@ func MigrationsCommand(v *viper.Viper, opts *Options) *cobra.Command {
 				return err
 			}
 
-			return migrations.ApplyAll(db, opts.Logger)
+			return migrations.ApplyAll(db, config.Logger)
 		},
 	}
 
