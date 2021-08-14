@@ -29,7 +29,8 @@ func RootCommand(cmdname string, opts ...option) (*cobra.Command, *Config) {
 	v := viper.New()
 
 	rootCmd := &cobra.Command{
-		Use: cmdname,
+		Use:          cmdname,
+		SilenceUsage: true,
 	}
 	rootCmd.PersistentFlags().StringVarP(&configFile, "config", "c", "dino.toml", "Config file")
 
