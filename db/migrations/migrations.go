@@ -1,4 +1,4 @@
-package dbutils
+package migrations
 
 import (
 	"context"
@@ -11,6 +11,8 @@ import (
 	"time"
 
 	"github.com/jmoiron/sqlx"
+
+	"github.com/vhakulinen/dino/db/tx"
 )
 
 const format = "20060102_1504"
@@ -120,8 +122,8 @@ func (slice MigrationSlice) find(num int) *Migration {
 func (slice MigrationSlice) ApplyAll(db *sqlx.DB, logger Logger) error {
 	ctx := context.TODO()
 
-	err := WithTransaction(ctx, db, func(tx *sqlx.Tx) error {
-		err := InitDB(tx)
+	err := tx.WithTransaction(ctx, db, func(tx *sqlx.Tx) error {
+		err := EnsureSchema(tx)
 		if err != nil {
 			return err
 		}

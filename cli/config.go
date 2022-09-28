@@ -1,25 +1,26 @@
-package commands
+package cli
 
 import (
 	"log"
 
 	"github.com/spf13/viper"
-	"github.com/vhakulinen/dino/dbutils"
+	"github.com/vhakulinen/dino/db/migrations"
+	"github.com/vhakulinen/dino/db/utils"
 )
 
 type Config struct {
-	// Viper instance used by dino.
+	// Viper instance used by the dino cli.
 	Viper *viper.Viper
 
-	DbConnParams  *dbutils.ConnectionParams
-	Logger        dbutils.Logger
+	DbConnParams  *utils.ConnectionParams
+	Logger        migrations.Logger
 	MigrationsDir string
 }
 
 func configFromViper(v *viper.Viper, opts ...option) Config {
 	config := Config{
 		Viper: v,
-		DbConnParams: &dbutils.ConnectionParams{
+		DbConnParams: &utils.ConnectionParams{
 			Host:     v.GetString("dino.db.host"),
 			Port:     v.GetInt("dino.db.port"),
 			Database: v.GetString("dino.db.database"),

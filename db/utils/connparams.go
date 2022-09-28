@@ -1,4 +1,4 @@
-package dbutils
+package utils
 
 import (
 	"fmt"
@@ -28,6 +28,6 @@ func (cp *ConnectionParams) ConnString() string {
 	return connstr
 }
 
-func (cp *ConnectionParams) Open() (*sqlx.DB, error) {
-	return sqlx.Open("postgres", cp.ConnString())
+func (cp *ConnectionParams) Open(driver string) (*sqlx.DB, error) {
+	return sqlx.Open(driver, cp.ConnString())
 }

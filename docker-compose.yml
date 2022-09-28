@@ -4,6 +4,6 @@ services:
         image: 'postgres:12.4'
         environment:
             POSTGRES_PASSWORD: 'password'
-            POSTGRES_DB: 'dino'
+            POSTGRES_DB: 'postgres'
         ports:
             - '5432:5432'

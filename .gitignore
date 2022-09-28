@@ -1,4 +1,4 @@
 # Migrations folder might've been created while doing some manual testing.
-migrations
+./migrations
 
 cover.out

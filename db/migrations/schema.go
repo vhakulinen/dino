@@ -1,20 +1,18 @@
-package dbutils
+package migrations
 
 import (
+	_ "embed"
 	"fmt"
 
 	"github.com/jmoiron/sqlx"
 )
 
-const SchemaTable = `
-CREATE TABLE IF NOT EXISTS schema_version (
-	version INTEGER NOT NULL DEFAULT 0
-);
-`
+//go:embed schema.sql
+var schema string
 
 // Initializes database for tracking migrations.
-func InitDB(tx *sqlx.Tx) error {
-	_, err := tx.Exec(SchemaTable)
+func EnsureSchema(tx *sqlx.Tx) error {
+	_, err := tx.Exec(schema)
 	if err != nil {
 		return err
 	}

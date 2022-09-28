@@ -1,4 +1,4 @@
-package commands
+package cli
 
 import (
 	"fmt"
@@ -8,11 +8,11 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 	"github.com/spf13/viper"
-	"github.com/vhakulinen/dino/dbutils"
+	"github.com/vhakulinen/dino/db/utils"
 )
 
-func connParamsFromViper(v *viper.Viper) *dbutils.ConnectionParams {
-	return &dbutils.ConnectionParams{
+func connParamsFromViper(v *viper.Viper) *utils.ConnectionParams {
+	return &utils.ConnectionParams{
 		Host:     v.GetString("dino.db.host"),
 		Port:     v.GetInt("dino.db.port"),
 		Database: v.GetString("dino.db.database"),
@@ -24,7 +24,9 @@ func connParamsFromViper(v *viper.Viper) *dbutils.ConnectionParams {
 
 // RootCommand gives entry point for dino's cli. Config will be non-nil, mostly
 // empty value which will be populated by the time any cobra commands are executed.
-func RootCommand(cmdname string, opts ...option) (*cobra.Command, *Config) {
+func RootCommand(cmdname string, dbdriver string, opts ...option) (*cobra.Command, *Config) {
+	// TODO(ville): Add tests for reading and binding the config.
+
 	var configFile string
 	v := viper.New()
 
@@ -43,12 +45,14 @@ func RootCommand(cmdname string, opts ...option) (*cobra.Command, *Config) {
 
 	rootCmd.PersistentFlags().StringP("migrations-dir", "", "migrations", "Directory where migrations are placed")
 
+	// Bind all the flags to viper and env.
 	rootCmd.PersistentFlags().VisitAll(func(flag *pflag.Flag) {
+		// Bind the flags.
 		key := "dino." + strings.ReplaceAll(flag.Name, "-", ".")
-		// Bind config with prefix.
 		v.BindPFlag(key, flag)
-		// Bind env with prefix. Remember to replace the dots with underscore
-		// for more usable ENV_VARS. E.g. dino.db.host => DINO_DB_HOST.
+
+		// Bind the env. Replace the dots with underscore for more usable
+		// ENV_VARS. E.g. dino.db.host => DINO_DB_HOST.
 		v.BindEnv(key, strings.ReplaceAll(strings.ToUpper(key), ".", "_"))
 	})
 
@@ -66,8 +70,8 @@ func RootCommand(cmdname string, opts ...option) (*cobra.Command, *Config) {
 	})
 
 	rootCmd.AddCommand(
-		MigrationsCommand(v, config),
-		DatabaseCommands(v, config),
+		MigrationsCommand(v, config, dbdriver),
+		DatabaseCommands(v, config, dbdriver),
 	)
 
 	return rootCmd, config

@@ -1,4 +1,4 @@
-package dbutils
+package fixtures
 
 import (
 	"bytes"
@@ -12,6 +12,7 @@ import (
 	"strings"
 
 	"github.com/jmoiron/sqlx"
+	"github.com/vhakulinen/dino/db/utils"
 )
 
 var cleanRegexps = []*regexp.Regexp{
@@ -46,7 +47,7 @@ func LoadFixture(ctx context.Context, exec sqlx.ExtContext, fixture string) erro
 	return FixSequences(ctx, exec)
 }
 
-func DumpFixture(opts *ConnectionParams) ([]byte, error) {
+func DumpFixture(opts *utils.ConnectionParams) ([]byte, error) {
 	cmd := exec.Command(
 		"pg_dump",
 		"-h", opts.Host,
@@ -75,8 +76,10 @@ func DumpFixture(opts *ConnectionParams) ([]byte, error) {
 	return cleanDump(out.Bytes()), nil
 }
 
+// TODO(ville): Move to the utils package?
 func QueryAllTableNames(ctx context.Context, exec sqlx.QueryerContext) ([]string, error) {
 	var tables []string
+	// TODO(ville): Select schema?
 	query := `
 		SELECT table_name
 		FROM information_schema.tables
@@ -90,6 +93,7 @@ func QueryAllTableNames(ctx context.Context, exec sqlx.QueryerContext) ([]string
 }
 
 // Truncates all tables (e.g. removes all data!).
+// TODO(ville): Move to the utils package?
 func TruncateAll(ctx context.Context, exec sqlx.ExtContext) error {
 	tables, err := QueryAllTableNames(ctx, exec)
 	if err != nil {

@@ -1,12 +1,12 @@
 package main
 
 import (
-	_ "github.com/lib/pq"
+	_ "github.com/jackc/pgx/v5"
 
-	"github.com/vhakulinen/dino/commands"
+	"github.com/vhakulinen/dino/cli"
 )
 
 func main() {
-	cmd, _ := commands.RootCommand("dino-dev")
+	cmd, _ := cli.RootCommand("dino-dev", "pgx")
 	cmd.Execute()
 }

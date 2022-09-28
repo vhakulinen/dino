@@ -1,4 +1,4 @@
-package commands
+package cli
 
 import (
 	"fmt"
@@ -8,17 +8,18 @@ import (
 	"github.com/jmoiron/sqlx"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
-	"github.com/vhakulinen/dino/dbutils"
+	"github.com/vhakulinen/dino/db/fixtures"
+	"github.com/vhakulinen/dino/db/tx"
 )
 
-func DatabaseCommands(v *viper.Viper, config *Config) *cobra.Command {
+func DatabaseCommands(v *viper.Viper, config *Config, dbdriver string) *cobra.Command {
 
 	cmdDump := &cobra.Command{
 		Use:   "dump",
 		Short: "Dump fixture directly from database",
 		RunE: func(cmd *cobra.Command, args []string) error {
 
-			dump, err := dbutils.DumpFixture(connParamsFromViper(v))
+			dump, err := fixtures.DumpFixture(connParamsFromViper(v))
 
 			if err != nil {
 				return err
@@ -47,13 +48,13 @@ func DatabaseCommands(v *viper.Viper, config *Config) *cobra.Command {
 				return err
 			}
 
-			db, err := connParamsFromViper(v).Open()
+			db, err := connParamsFromViper(v).Open(dbdriver)
 			if err != nil {
 				return err
 			}
 
-			err = dbutils.WithTransaction(cmd.Context(), db, func(tx *sqlx.Tx) error {
-				return dbutils.LoadFixture(cmd.Context(), tx, string(contents))
+			err = tx.WithTransaction(cmd.Context(), db, func(tx *sqlx.Tx) error {
+				return fixtures.LoadFixture(cmd.Context(), tx, string(contents))
 			})
 
 			return err
@@ -64,14 +65,14 @@ func DatabaseCommands(v *viper.Viper, config *Config) *cobra.Command {
 		Use:   "truncate-all",
 		Short: "Truncate all tables in the database",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			db, err := connParamsFromViper(v).Open()
+			db, err := connParamsFromViper(v).Open(dbdriver)
 			if err != nil {
 				return err
 			}
 
-			err = dbutils.WithTransaction(cmd.Context(), db, func(tx *sqlx.Tx) error {
+			err = tx.WithTransaction(cmd.Context(), db, func(tx *sqlx.Tx) error {
 				config.Logger.Printf("Truncating...")
-				return dbutils.TruncateAll(cmd.Context(), tx)
+				return fixtures.TruncateAll(cmd.Context(), tx)
 			})
 
 			return err

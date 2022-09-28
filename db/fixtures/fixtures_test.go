@@ -1,4 +1,4 @@
-package dbutils_test
+package fixtures_test
 
 import (
 	"context"
@@ -6,17 +6,18 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
-	_ "github.com/lib/pq"
+	_ "github.com/jackc/pgx/v5"
 
-	"github.com/vhakulinen/dino/dbtestutils"
-	"github.com/vhakulinen/dino/dbutils"
+	"github.com/vhakulinen/dino/db/dbtest"
+	"github.com/vhakulinen/dino/db/fixtures"
+	"github.com/vhakulinen/dino/db/utils"
 )
 
 func TestDumpFixture(t *testing.T) {
-	connParams := defaultConnectionParams
+	connParams := dbtest.DefaultConnectionParams
 	dbname := strings.ToLower(t.Name())
 
-	db, drop := dbtestutils.WithCreateDB(t, &connParams, dbname)
+	db, drop := dbtest.WithCreateDB(t, &connParams, dbname)
 	defer drop(t)
 
 	_, err := db.Exec(`
@@ -37,7 +38,7 @@ func TestDumpFixture(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	dump, err := dbutils.DumpFixture(&dbutils.ConnectionParams{
+	dump, err := fixtures.DumpFixture(&utils.ConnectionParams{
 		Host:     connParams.Host,
 		Port:     connParams.Port,
 		Username: connParams.Username,
@@ -62,10 +63,10 @@ INSERT INTO foo (id, name) VALUES
 }
 
 func TestLoadFixture(t *testing.T) {
-	connParams := defaultConnectionParams
+	connParams := dbtest.DefaultConnectionParams
 	dbname := strings.ToLower(t.Name())
 
-	db, drop := dbtestutils.WithCreateDB(t, &connParams, dbname)
+	db, drop := dbtest.WithCreateDB(t, &connParams, dbname)
 	defer drop(t)
 
 	_, err := db.Exec(`
@@ -83,7 +84,7 @@ func TestLoadFixture(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	err = dbutils.LoadFixture(context.TODO(), db, `
+	err = fixtures.LoadFixture(context.TODO(), db, `
 	INSERT INTO bar (id, num) VALUES
 		(1, 4),
 		(2, 9),
