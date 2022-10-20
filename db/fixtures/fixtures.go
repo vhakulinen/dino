@@ -26,14 +26,10 @@ var cleanRegexps = []*regexp.Regexp{
 	regexp.MustCompile(`(?m)^\n`),
 }
 
-var publicSchemaRegex = regexp.MustCompile(`(?m)^INSERT INTO public\.`)
-
 func cleanDump(dump []byte) []byte {
 	for _, re := range cleanRegexps {
 		dump = re.ReplaceAll(dump, []byte(""))
 	}
-
-	dump = publicSchemaRegex.ReplaceAll(dump, []byte("INSERT INTO "))
 
 	return dump
 }

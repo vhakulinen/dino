@@ -49,10 +49,10 @@ func TestDumpFixture(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	expected := `INSERT INTO bar (id, num) VALUES
+	expected := `INSERT INTO public.bar (id, num) VALUES
 	(1, 4),
 	(2, 9);
-INSERT INTO foo (id, name) VALUES
+INSERT INTO public.foo (id, name) VALUES
 	(1, 'hey there'),
 	(2, 'well hello');
 `
