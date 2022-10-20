@@ -19,7 +19,7 @@ func DatabaseCommands(v *viper.Viper, config *Config, dbdriver string) *cobra.Co
 		Short: "Dump fixture directly from database",
 		RunE: func(cmd *cobra.Command, args []string) error {
 
-			dump, err := fixtures.DumpFixture(connParamsFromViper(v))
+			dump, err := fixtures.DumpFixture(config.DbConnParams)
 
 			if err != nil {
 				return err
@@ -48,7 +48,7 @@ func DatabaseCommands(v *viper.Viper, config *Config, dbdriver string) *cobra.Co
 				return err
 			}
 
-			db, err := connParamsFromViper(v).Open(dbdriver)
+			db, err := config.DbConnParams.Open(dbdriver)
 			if err != nil {
 				return err
 			}
@@ -65,7 +65,7 @@ func DatabaseCommands(v *viper.Viper, config *Config, dbdriver string) *cobra.Co
 		Use:   "truncate-all",
 		Short: "Truncate all tables in the database",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			db, err := connParamsFromViper(v).Open(dbdriver)
+			db, err := config.DbConnParams.Open(dbdriver)
 			if err != nil {
 				return err
 			}

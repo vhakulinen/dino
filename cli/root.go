@@ -2,25 +2,14 @@ package cli
 
 import (
 	"fmt"
+	"io/fs"
 	"os"
 	"strings"
 
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 	"github.com/spf13/viper"
-	"github.com/vhakulinen/dino/db/utils"
 )
-
-func connParamsFromViper(v *viper.Viper) *utils.ConnectionParams {
-	return &utils.ConnectionParams{
-		Host:     v.GetString("dino.db.host"),
-		Port:     v.GetInt("dino.db.port"),
-		Database: v.GetString("dino.db.database"),
-		Username: v.GetString("dino.db.username"),
-		Password: v.GetString("dino.db.password"),
-		SSLMode:  v.GetString("dino.db.sslmod"),
-	}
-}
 
 // RootCommand gives entry point for dino's cli. Config will be non-nil, mostly
 // empty value which will be populated by the time any cobra commands are executed.
@@ -62,8 +51,10 @@ func RootCommand(cmdname string, dbdriver string, opts ...option) (*cobra.Comman
 		v.SetConfigType("toml")
 
 		if err := v.ReadInConfig(); err != nil {
-			fmt.Printf("Can't read config file: %v\n", err)
-			os.Exit(1)
+			if _, ok := err.(*fs.PathError); !ok {
+				fmt.Printf("Can't read config file: %v %v\n", ok, err)
+				os.Exit(1)
+			}
 		}
 
 		*config = configFromViper(v, opts...)

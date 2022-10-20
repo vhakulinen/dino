@@ -108,7 +108,7 @@ func (slice MigrationSlice) CreateNext(baseDir, migrationName string) (*Migratio
 	}, nil
 }
 
-func (slice MigrationSlice) find(num int) *Migration {
+func (slice MigrationSlice) Find(num int) *Migration {
 	for _, m := range slice {
 		if m.Num == num {
 			return m
@@ -116,6 +116,24 @@ func (slice MigrationSlice) find(num int) *Migration {
 	}
 
 	return nil
+}
+
+func (slice MigrationSlice) RevertCurrent(tx *sqlx.Tx) error {
+	num, err := QuerySchemaVersion(tx)
+	if err != nil {
+		return err
+	}
+
+	m := slice.Find(num)
+	if m == nil {
+		return fmt.Errorf("Migration %d not found (corrupted state)", num)
+	}
+
+	if _, err := tx.Exec(m.Down); err != nil {
+		return err
+	}
+
+	return setSchemaVersion(tx, m.Num-1)
 }
 
 // Applies all pending migrations to the database.
@@ -133,7 +151,7 @@ func (slice MigrationSlice) ApplyAll(db *sqlx.DB, logger Logger) error {
 			return err
 		}
 
-		for m := slice.find(current + 1); m != nil; m = slice.find(current + 1) {
+		for m := slice.Find(current + 1); m != nil; m = slice.Find(current + 1) {
 			logger.Printf("Applying '%s'...", m.Name)
 
 			_, err := tx.Exec(m.Up)

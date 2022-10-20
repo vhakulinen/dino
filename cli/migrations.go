@@ -4,9 +4,12 @@ import (
 	"os"
 	"strings"
 
+	"github.com/jmoiron/sqlx"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
+
 	"github.com/vhakulinen/dino/db/migrations"
+	"github.com/vhakulinen/dino/db/tx"
 )
 
 type Migration struct {
@@ -39,6 +42,26 @@ func MigrationsCommand(v *viper.Viper, config *Config, dbdriver string) *cobra.C
 		},
 	}
 
+	cmdRevert := &cobra.Command{
+		Use:   "revert",
+		Short: "Revert the latest migration",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			migs, err := migrations.MigrationsFromFS(os.DirFS(config.MigrationsDir))
+			if err != nil {
+				return err
+			}
+
+			db, err := connParamsFromViper(v).Open(dbdriver)
+			if err != nil {
+				return err
+			}
+
+			return tx.WithTransaction(cmd.Context(), db, func(tx *sqlx.Tx) error {
+				return migs.RevertCurrent(tx)
+			})
+		},
+	}
+
 	cmdApply := &cobra.Command{
 		Use:   "apply",
 		Short: "Apply all migrations",
@@ -62,6 +85,6 @@ func MigrationsCommand(v *viper.Viper, config *Config, dbdriver string) *cobra.C
 		Short: "Manage migrations",
 	}
 
-	rootCmd.AddCommand(cmdNew, cmdApply)
+	rootCmd.AddCommand(cmdNew, cmdApply, cmdRevert)
 	return rootCmd
 }
