@@ -56,7 +56,7 @@ func MigrationsCommand(v *viper.Viper, config *Config, dbdriver string) *cobra.C
 				return err
 			}
 
-			return tx.WithTransaction(cmd.Context(), db, func(tx *sqlx.Tx) error {
+			return tx.BeginFn(cmd.Context(), db, func(tx *sqlx.Tx) error {
 				return migs.RevertCurrent(tx)
 			})
 		},

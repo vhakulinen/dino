@@ -138,7 +138,7 @@ func TestMigrationSlice_ApplyAll(t *testing.T) {
 		"initialized database": {
 			Run: func(t *testing.T, db *sqlx.DB, migs migrations.MigrationSlice) {
 				ctx := context.TODO()
-				err := tx.WithTransaction(ctx, db, func(tx *sqlx.Tx) error {
+				err := tx.BeginFn(ctx, db, func(tx *sqlx.Tx) error {
 					return migrations.EnsureSchema(tx)
 				})
 				if err != nil {

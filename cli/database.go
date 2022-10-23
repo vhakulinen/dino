@@ -53,7 +53,7 @@ func DatabaseCommands(v *viper.Viper, config *Config, dbdriver string) *cobra.Co
 				return err
 			}
 
-			err = tx.WithTransaction(cmd.Context(), db, func(tx *sqlx.Tx) error {
+			err = tx.BeginFn(cmd.Context(), db, func(tx *sqlx.Tx) error {
 				return fixtures.LoadFixture(cmd.Context(), tx, string(contents))
 			})
 
@@ -70,7 +70,7 @@ func DatabaseCommands(v *viper.Viper, config *Config, dbdriver string) *cobra.Co
 				return err
 			}
 
-			err = tx.WithTransaction(cmd.Context(), db, func(tx *sqlx.Tx) error {
+			err = tx.BeginFn(cmd.Context(), db, func(tx *sqlx.Tx) error {
 				config.Logger.Printf("Truncating...")
 				return fixtures.TruncateAll(cmd.Context(), tx)
 			})

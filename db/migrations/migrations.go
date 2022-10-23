@@ -140,7 +140,7 @@ func (slice MigrationSlice) RevertCurrent(tx *sqlx.Tx) error {
 func (slice MigrationSlice) ApplyAll(db *sqlx.DB, logger Logger) error {
 	ctx := context.TODO()
 
-	err := tx.WithTransaction(ctx, db, func(tx *sqlx.Tx) error {
+	err := tx.BeginFn(ctx, db, func(tx *sqlx.Tx) error {
 		err := EnsureSchema(tx)
 		if err != nil {
 			return err

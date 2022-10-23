@@ -13,7 +13,7 @@ import (
 	"github.com/vhakulinen/dino/db/tx"
 )
 
-func TestWithTransaction_commit(t *testing.T) {
+func TestBeginFn_commit(t *testing.T) {
 	connParams := dbtest.DefaultConnectionParams
 	dbname := strings.ToLower(t.Name())
 
@@ -24,7 +24,7 @@ func TestWithTransaction_commit(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	err := tx.WithTransaction(context.Background(), db, func(tx *sqlx.Tx) error {
+	err := tx.BeginFn(context.Background(), db, func(tx *sqlx.Tx) error {
 		_, err := tx.Exec(`INSERT INTO foobar VALUES ('foobar')`)
 		return err
 	})
@@ -43,7 +43,7 @@ func TestWithTransaction_commit(t *testing.T) {
 	}
 }
 
-func TestWithTransaction_rollback(t *testing.T) {
+func TestBeginFn_rollback(t *testing.T) {
 	myerr := errors.New("My error")
 
 	connParams := dbtest.DefaultConnectionParams
@@ -56,7 +56,7 @@ func TestWithTransaction_rollback(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	err := tx.WithTransaction(context.Background(), db, func(tx *sqlx.Tx) error {
+	err := tx.BeginFn(context.Background(), db, func(tx *sqlx.Tx) error {
 		_, err := tx.Exec(`INSERT INTO foobar VALUES ('foobar')`)
 		if err != nil {
 			t.Errorf("Exec failed: %v", err)
