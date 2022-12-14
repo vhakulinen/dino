@@ -7,6 +7,6 @@ import (
 )
 
 func main() {
-	cmd, _ := cli.RootCommand("dino-dev", "pgx")
+	cmd, _ := cli.New(cli.OptionCmdName("dino-dev"), cli.OptionDbDriver("pgx"))
 	cmd.Execute()
 }

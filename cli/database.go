@@ -7,19 +7,18 @@ import (
 
 	"github.com/jmoiron/sqlx"
 	"github.com/spf13/cobra"
-	"github.com/spf13/viper"
 	"github.com/vhakulinen/dino/db/fixtures"
 	"github.com/vhakulinen/dino/db/tx"
 )
 
-func DatabaseCommands(v *viper.Viper, config *Config, dbdriver string) *cobra.Command {
+func databaseCommands(config *Config) *cobra.Command {
 
 	cmdDump := &cobra.Command{
 		Use:   "dump",
 		Short: "Dump fixture directly from database",
 		RunE: func(cmd *cobra.Command, args []string) error {
 
-			dump, err := fixtures.DumpFixture(config.DbConnParams)
+			dump, err := fixtures.DumpFixture(config.ConnParams())
 
 			if err != nil {
 				return err
@@ -48,7 +47,7 @@ func DatabaseCommands(v *viper.Viper, config *Config, dbdriver string) *cobra.Co
 				return err
 			}
 
-			db, err := config.DbConnParams.Open(dbdriver)
+			db, err := config.ConnParams().Open(config.opts.dbDriver)
 			if err != nil {
 				return err
 			}
@@ -65,13 +64,13 @@ func DatabaseCommands(v *viper.Viper, config *Config, dbdriver string) *cobra.Co
 		Use:   "truncate-all",
 		Short: "Truncate all tables in the database",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			db, err := config.DbConnParams.Open(dbdriver)
+			db, err := config.ConnParams().Open(config.opts.dbDriver)
 			if err != nil {
 				return err
 			}
 
 			err = tx.BeginFn(cmd.Context(), db, func(tx *sqlx.Tx) error {
-				config.Logger.Printf("Truncating...")
+				config.opts.logger.Printf("Truncating...")
 				return fixtures.TruncateAll(cmd.Context(), tx)
 			})
 

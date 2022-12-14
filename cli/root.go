@@ -11,16 +11,15 @@ import (
 	"github.com/spf13/viper"
 )
 
-// RootCommand gives entry point for dino's cli. Config will be non-nil, mostly
-// empty value which will be populated by the time any cobra commands are executed.
-func RootCommand(cmdname string, dbdriver string, opts ...option) (*cobra.Command, *Config) {
+// New gives entry point for dino's cli.
+func New(opts ...option) (*cobra.Command, *Config) {
 	// TODO(ville): Add tests for reading and binding the config.
 
 	var configFile string
-	v := viper.New()
+	c := &Config{viper.New(), newOptions(opts...)}
 
 	rootCmd := &cobra.Command{
-		Use:          cmdname,
+		Use:          c.opts.cmdName,
 		SilenceUsage: true,
 	}
 	rootCmd.PersistentFlags().StringVarP(&configFile, "config", "c", "dino.toml", "Config file")
@@ -38,32 +37,29 @@ func RootCommand(cmdname string, dbdriver string, opts ...option) (*cobra.Comman
 	rootCmd.PersistentFlags().VisitAll(func(flag *pflag.Flag) {
 		// Bind the flags.
 		key := "dino." + strings.ReplaceAll(flag.Name, "-", ".")
-		v.BindPFlag(key, flag)
+		c.BindPFlag(key, flag)
 
 		// Bind the env. Replace the dots with underscore for more usable
 		// ENV_VARS. E.g. dino.db.host => DINO_DB_HOST.
-		v.BindEnv(key, strings.ReplaceAll(strings.ToUpper(key), ".", "_"))
+		c.BindEnv(key, strings.ReplaceAll(strings.ToUpper(key), ".", "_"))
 	})
 
-	config := new(Config)
 	cobra.OnInitialize(func() {
-		v.SetConfigFile(configFile)
-		v.SetConfigType("toml")
+		c.SetConfigFile(configFile)
+		c.SetConfigType("toml")
 
-		if err := v.ReadInConfig(); err != nil {
+		if err := c.ReadInConfig(); err != nil {
 			if _, ok := err.(*fs.PathError); !ok {
 				fmt.Printf("Can't read config file: %v %v\n", ok, err)
 				os.Exit(1)
 			}
 		}
-
-		*config = configFromViper(v, opts...)
 	})
 
 	rootCmd.AddCommand(
-		MigrationsCommand(v, config, dbdriver),
-		DatabaseCommands(v, config, dbdriver),
+		migrationsCommand(c),
+		databaseCommands(c),
 	)
 
-	return rootCmd, config
+	return rootCmd, c
 }
