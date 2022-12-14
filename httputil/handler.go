@@ -6,6 +6,17 @@ import (
 	"net/http"
 )
 
+// Handler that can return a error.
+//
+// If returned error is a ErrorResponder, it is used to respond to the client.
+//
+// If error is not a ErrorResponder or the ErrorResponder returns a new error,
+// 500 Internal Server Error is written to the client and WithHandlerErrorLogger
+// is used to log the error. Is the middleware is not present, the log package
+// is used.
+//
+// No guarantees are made about the logged error, except that it wraps the
+// original error.
 type Handler func(http.ResponseWriter, *http.Request) error
 
 func (h Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
@@ -23,8 +34,7 @@ func (h Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	// TODO(ville): Use a typed error?
-	Log(r, fmt.Errorf("Error handling a request: %w", err))
+	handlerLog(r, fmt.Errorf("Error handling a request: %w", err))
 
 	http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 }
@@ -52,6 +62,8 @@ func (mh *MethodHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	h.ServeHTTP(w, r)
 }
 
+// NewJSONHandler wraps Handler and tries to decode the request body into T.
+// If decoding fails, bad request status is written to the client.
 func NewJSONHandler[T any](fn func(w http.ResponseWriter, r *http.Request, req *T) error) Handler {
 	BadRequest := func(err error) error {
 		return NewStatusError(http.StatusBadRequest, "", err)
