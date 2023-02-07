@@ -19,13 +19,7 @@ import (
 // original error.
 type Handler func(http.ResponseWriter, *http.Request) error
 
-func (h Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	err := h(w, r)
-	if err == nil {
-		// All good.
-		return
-	}
-
+func (h Handler) HandleError(w http.ResponseWriter, r *http.Request, err error) {
 	if resp, ok := err.(ErrorResponder); ok {
 		err = resp.ErrorRespond(w, r)
 		if err == nil {
@@ -37,6 +31,16 @@ func (h Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	handlerLog(r, fmt.Errorf("Error handling a request: %w", err))
 
 	http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+}
+
+func (h Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	err := h(w, r)
+	if err == nil {
+		// All good.
+		return
+	}
+
+	h.HandleError(w, r, err)
 }
 
 type MethodHandler struct {
