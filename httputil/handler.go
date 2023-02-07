@@ -19,7 +19,7 @@ import (
 // original error.
 type Handler func(http.ResponseWriter, *http.Request) error
 
-func (h Handler) HandleError(w http.ResponseWriter, r *http.Request, err error) {
+func HandleError(w http.ResponseWriter, r *http.Request, err error) {
 	if resp, ok := err.(ErrorResponder); ok {
 		err = resp.ErrorRespond(w, r)
 		if err == nil {
@@ -40,7 +40,7 @@ func (h Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	h.HandleError(w, r, err)
+	HandleError(w, r, err)
 }
 
 type MethodHandler struct {
