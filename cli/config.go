@@ -1,6 +1,10 @@
 package cli
 
 import (
+	"fmt"
+	"io/fs"
+	"os"
+
 	"github.com/spf13/viper"
 
 	"github.com/vhakulinen/dino/db/utils"
@@ -10,6 +14,18 @@ import (
 type Config struct {
 	*viper.Viper
 	opts *options
+}
+
+func (c *Config) ReadConfigFile() {
+	c.SetConfigFile(c.opts.configFile)
+	c.SetConfigType("toml")
+
+	if err := c.ReadInConfig(); err != nil {
+		if _, ok := err.(*fs.PathError); !ok {
+			fmt.Printf("Can't read config file: %v %v\n", ok, err)
+			os.Exit(1)
+		}
+	}
 }
 
 func (c *Config) ConnParams() *utils.ConnectionParams {

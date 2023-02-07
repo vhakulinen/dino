@@ -1,9 +1,6 @@
 package cli
 
 import (
-	"fmt"
-	"io/fs"
-	"os"
 	"strings"
 
 	"github.com/spf13/cobra"
@@ -22,7 +19,7 @@ func New(opts ...option) (*cobra.Command, *Config) {
 		Use:          c.opts.cmdName,
 		SilenceUsage: true,
 	}
-	rootCmd.PersistentFlags().StringVarP(&configFile, "config", "c", "dino.toml", "Config file")
+	rootCmd.PersistentFlags().StringVarP(&configFile, "config", "c", c.opts.configFile, "Config file")
 
 	rootCmd.PersistentFlags().StringP("db-host", "", "localhost", "Database host")
 	rootCmd.PersistentFlags().IntP("db-port", "", 5432, "Database port")
@@ -45,15 +42,7 @@ func New(opts ...option) (*cobra.Command, *Config) {
 	})
 
 	cobra.OnInitialize(func() {
-		c.SetConfigFile(configFile)
-		c.SetConfigType("toml")
-
-		if err := c.ReadInConfig(); err != nil {
-			if _, ok := err.(*fs.PathError); !ok {
-				fmt.Printf("Can't read config file: %v %v\n", ok, err)
-				os.Exit(1)
-			}
-		}
+		c.ReadConfigFile()
 	})
 
 	rootCmd.AddCommand(
