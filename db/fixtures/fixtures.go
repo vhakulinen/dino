@@ -73,13 +73,12 @@ func DumpFixture(opts *utils.ConnectionParams) ([]byte, error) {
 }
 
 // TODO(ville): Move to the utils package?
-func QueryAllTableNames(ctx context.Context, exec sqlx.QueryerContext) ([]string, error) {
+func queryAllTableNames(ctx context.Context, exec sqlx.QueryerContext) ([]string, error) {
 	var tables []string
-	// TODO(ville): Select schema?
 	query := `
-		SELECT table_name
+		SELECT table_schema || '.' || table_name
 		FROM information_schema.tables
-		WHERE table_schema = 'public'
+		WHERE table_schema NOT IN ('information_schema', 'pg_catalog')
 		AND table_type = 'BASE TABLE'
 	`
 
@@ -91,7 +90,7 @@ func QueryAllTableNames(ctx context.Context, exec sqlx.QueryerContext) ([]string
 // Truncates all tables (e.g. removes all data!).
 // TODO(ville): Move to the utils package?
 func TruncateAll(ctx context.Context, exec sqlx.ExtContext) error {
-	tables, err := QueryAllTableNames(ctx, exec)
+	tables, err := queryAllTableNames(ctx, exec)
 	if err != nil {
 		return err
 	}
