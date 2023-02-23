@@ -47,7 +47,7 @@ func databaseCommands(config *Config) *cobra.Command {
 				return err
 			}
 
-			db, err := config.ConnParams().Open(config.opts.dbDriver)
+			db, err := sqlx.Open(config.opts.dbDriver, config.ConnParams().ConnString())
 			if err != nil {
 				return err
 			}
@@ -64,7 +64,7 @@ func databaseCommands(config *Config) *cobra.Command {
 		Use:   "truncate-all",
 		Short: "Truncate all tables in the database",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			db, err := config.ConnParams().Open(config.opts.dbDriver)
+			db, err := sqlx.Open(config.opts.dbDriver, config.ConnParams().ConnString())
 			if err != nil {
 				return err
 			}

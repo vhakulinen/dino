@@ -42,7 +42,7 @@ func migrationsCommand(config *Config) *cobra.Command {
 				return err
 			}
 
-			db, err := config.ConnParams().Open(config.opts.dbDriver)
+			db, err := sqlx.Open(config.opts.dbDriver, config.ConnParams().ConnString())
 			if err != nil {
 				return err
 			}
@@ -62,7 +62,7 @@ func migrationsCommand(config *Config) *cobra.Command {
 				return err
 			}
 
-			db, err := config.ConnParams().Open(config.opts.dbDriver)
+			db, err := sqlx.Open(config.opts.dbDriver, config.ConnParams().ConnString())
 			if err != nil {
 				return err
 			}

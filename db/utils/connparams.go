@@ -2,8 +2,6 @@ package utils
 
 import (
 	"fmt"
-
-	"github.com/jmoiron/sqlx"
 )
 
 type ConnectionParams struct {
@@ -26,8 +24,4 @@ func (cp *ConnectionParams) ConnString() string {
 	)
 
 	return connstr
-}
-
-func (cp *ConnectionParams) Open(driver string) (*sqlx.DB, error) {
-	return sqlx.Open(driver, cp.ConnString())
 }

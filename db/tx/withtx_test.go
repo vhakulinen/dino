@@ -6,7 +6,7 @@ import (
 	"strings"
 	"testing"
 
-	_ "github.com/jackc/pgx/v5"
+	_ "github.com/jackc/pgx/v5/stdlib"
 	"github.com/jmoiron/sqlx"
 
 	"github.com/vhakulinen/dino/db/dbtest"
@@ -17,8 +17,7 @@ func TestBeginFn_commit(t *testing.T) {
 	connParams := dbtest.DefaultConnectionParams
 	dbname := strings.ToLower(t.Name())
 
-	db, drop := dbtest.WithCreateDB(t, &connParams, dbname)
-	defer drop(t)
+	db := dbtest.OpenDB(t, "pgx", dbtest.WithCreateDB(t, "pgx", &connParams, dbname))
 
 	if _, err := db.Exec(`CREATE TABLE foobar (value TEXT NOT NULL);`); err != nil {
 		t.Fatal(err)
@@ -49,8 +48,7 @@ func TestBeginFn_rollback(t *testing.T) {
 	connParams := dbtest.DefaultConnectionParams
 	dbname := strings.ToLower(t.Name())
 
-	db, drop := dbtest.WithCreateDB(t, &connParams, dbname)
-	defer drop(t)
+	db := dbtest.OpenDB(t, "pgx", dbtest.WithCreateDB(t, "pgx", &connParams, dbname))
 
 	if _, err := db.Exec(`CREATE TABLE foobar (value TEXT NOT NULL);`); err != nil {
 		t.Fatal(err)

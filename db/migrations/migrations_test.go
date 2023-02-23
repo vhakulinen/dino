@@ -9,7 +9,7 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
-	_ "github.com/jackc/pgx/v5"
+	_ "github.com/jackc/pgx/v5/stdlib"
 	"github.com/jmoiron/sqlx"
 
 	"github.com/vhakulinen/dino/db/dbtest"
@@ -210,8 +210,7 @@ func TestMigrationSlice_ApplyAll(t *testing.T) {
 
 			dbname := strings.ToLower(t.Name())
 			dbname = strings.ReplaceAll(dbname, "/", "_")
-			db, drop := dbtest.WithCreateDB(t, &connParams, dbname)
-			defer drop(t)
+			db := dbtest.OpenDB(t, "pgx", dbtest.WithCreateDB(t, "pgx", &connParams, dbname))
 
 			tt.Run(t, db, migrations)
 		})

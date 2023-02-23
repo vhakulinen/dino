@@ -6,7 +6,7 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
-	_ "github.com/jackc/pgx/v5"
+	_ "github.com/jackc/pgx/v5/stdlib"
 
 	"github.com/vhakulinen/dino/db/dbtest"
 	"github.com/vhakulinen/dino/db/fixtures"
@@ -17,8 +17,7 @@ func TestDumpFixture(t *testing.T) {
 	connParams := dbtest.DefaultConnectionParams
 	dbname := strings.ToLower(t.Name())
 
-	db, drop := dbtest.WithCreateDB(t, &connParams, dbname)
-	defer drop(t)
+	db := dbtest.OpenDB(t, "pgx", dbtest.WithCreateDB(t, "pgx", &connParams, dbname))
 
 	_, err := db.Exec(`
 	CREATE TABLE foo (
@@ -66,8 +65,7 @@ func TestLoadFixture(t *testing.T) {
 	connParams := dbtest.DefaultConnectionParams
 	dbname := strings.ToLower(t.Name())
 
-	db, drop := dbtest.WithCreateDB(t, &connParams, dbname)
-	defer drop(t)
+	db := dbtest.OpenDB(t, "pgx", dbtest.WithCreateDB(t, "pgx", &connParams, dbname))
 
 	_, err := db.Exec(`
 	CREATE TABLE foo (
