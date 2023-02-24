@@ -5,10 +5,9 @@ import (
 	"io"
 	"os"
 
-	"github.com/jmoiron/sqlx"
+	"github.com/jackc/pgx/v5"
 	"github.com/spf13/cobra"
 	"github.com/vhakulinen/dino/db/fixtures"
-	"github.com/vhakulinen/dino/db/tx"
 )
 
 func databaseCommands(config *Config) *cobra.Command {
@@ -47,12 +46,12 @@ func databaseCommands(config *Config) *cobra.Command {
 				return err
 			}
 
-			db, err := sqlx.Open(config.opts.dbDriver, config.ConnParams().ConnString())
+			db, err := pgx.Connect(cmd.Context(), config.ConnParams().ConnString())
 			if err != nil {
 				return err
 			}
 
-			err = tx.BeginFn(cmd.Context(), db, func(tx *sqlx.Tx) error {
+			err = pgx.BeginFunc(cmd.Context(), db, func(tx pgx.Tx) error {
 				return fixtures.LoadFixture(cmd.Context(), tx, string(contents))
 			})
 
@@ -64,12 +63,12 @@ func databaseCommands(config *Config) *cobra.Command {
 		Use:   "truncate-all",
 		Short: "Truncate all tables in the database",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			db, err := sqlx.Open(config.opts.dbDriver, config.ConnParams().ConnString())
+			db, err := pgx.Connect(cmd.Context(), config.ConnParams().ConnString())
 			if err != nil {
 				return err
 			}
 
-			err = tx.BeginFn(cmd.Context(), db, func(tx *sqlx.Tx) error {
+			err = pgx.BeginFunc(cmd.Context(), db, func(tx pgx.Tx) error {
 				config.opts.logger.Printf("Truncating...")
 				return fixtures.TruncateAll(cmd.Context(), tx)
 			})

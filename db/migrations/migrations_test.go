@@ -9,12 +9,12 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
+	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgxpool"
 	_ "github.com/jackc/pgx/v5/stdlib"
-	"github.com/jmoiron/sqlx"
 
 	"github.com/vhakulinen/dino/db/dbtest"
 	"github.com/vhakulinen/dino/db/migrations"
-	"github.com/vhakulinen/dino/db/tx"
 	"github.com/vhakulinen/dino/db/utils"
 )
 
@@ -100,10 +100,10 @@ func TestMigrationSlice_CreateNext(t *testing.T) {
 
 func TestMigrationSlice_ApplyAll(t *testing.T) {
 	type Test struct {
-		Run func(t *testing.T, db *sqlx.DB, migrations migrations.MigrationSlice)
+		Run func(t *testing.T, db *pgxpool.Pool, migrations migrations.MigrationSlice)
 	}
 
-	tables := func(t *testing.T, db *sqlx.DB) []string {
+	tables := func(t *testing.T, db *pgxpool.Pool) []string {
 		t.Helper()
 
 		// TODO(ville): Context?
@@ -117,7 +117,7 @@ func TestMigrationSlice_ApplyAll(t *testing.T) {
 
 	tests := map[string]Test{
 		"empty database": {
-			Run: func(t *testing.T, db *sqlx.DB, migs migrations.MigrationSlice) {
+			Run: func(t *testing.T, db *pgxpool.Pool, migs migrations.MigrationSlice) {
 				if err := migs.ApplyAll(db, log.Default()); err != nil {
 					t.Fatal(err)
 				}
@@ -136,10 +136,10 @@ func TestMigrationSlice_ApplyAll(t *testing.T) {
 			},
 		},
 		"initialized database": {
-			Run: func(t *testing.T, db *sqlx.DB, migs migrations.MigrationSlice) {
+			Run: func(t *testing.T, db *pgxpool.Pool, migs migrations.MigrationSlice) {
 				ctx := context.TODO()
-				err := tx.BeginFn(ctx, db, func(tx *sqlx.Tx) error {
-					return migrations.EnsureSchema(tx)
+				err := pgx.BeginFunc(ctx, db, func(tx pgx.Tx) error {
+					return migrations.EnsureSchema(ctx, tx)
 				})
 				if err != nil {
 					t.Fatal(err)
@@ -163,7 +163,7 @@ func TestMigrationSlice_ApplyAll(t *testing.T) {
 			},
 		},
 		"partially migrated": {
-			Run: func(t *testing.T, db *sqlx.DB, migrations migrations.MigrationSlice) {
+			Run: func(t *testing.T, db *pgxpool.Pool, migrations migrations.MigrationSlice) {
 				partial := migrations[:1]
 
 				if err := partial.ApplyAll(db, log.Default()); err != nil {
@@ -202,6 +202,7 @@ func TestMigrationSlice_ApplyAll(t *testing.T) {
 
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
+			ctx := context.Background()
 			source := os.DirFS(testmigrationsPath)
 			migrations, err := migrations.MigrationsFromFS(source)
 			if err != nil {
@@ -210,7 +211,7 @@ func TestMigrationSlice_ApplyAll(t *testing.T) {
 
 			dbname := strings.ToLower(t.Name())
 			dbname = strings.ReplaceAll(dbname, "/", "_")
-			db := dbtest.OpenDB(t, "pgx", dbtest.WithCreateDB(t, "pgx", &connParams, dbname))
+			db := dbtest.OpenDB(t, ctx, dbtest.WithCreateDB(t, ctx, &connParams, dbname))
 
 			tt.Run(t, db, migrations)
 		})

@@ -10,9 +10,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/jmoiron/sqlx"
-
-	"github.com/vhakulinen/dino/db/tx"
+	"github.com/jackc/pgx/v5"
 )
 
 const format = "20060102_1504"
@@ -118,8 +116,8 @@ func (slice MigrationSlice) Find(num int) *Migration {
 	return nil
 }
 
-func (slice MigrationSlice) RevertCurrent(tx *sqlx.Tx) error {
-	num, err := QuerySchemaVersion(tx)
+func (slice MigrationSlice) RevertCurrent(ctx context.Context, tx pgx.Tx) error {
+	num, err := QuerySchemaVersion(ctx, tx)
 	if err != nil {
 		return err
 	}
@@ -129,24 +127,28 @@ func (slice MigrationSlice) RevertCurrent(tx *sqlx.Tx) error {
 		return fmt.Errorf("Migration %d not found (corrupted state)", num)
 	}
 
-	if _, err := tx.Exec(m.Down); err != nil {
+	if _, err := tx.Exec(ctx, m.Down); err != nil {
 		return err
 	}
 
-	return setSchemaVersion(tx, m.Num-1)
+	return setSchemaVersion(ctx, tx, m.Num-1)
+}
+
+type applyDB interface {
+	Begin(context.Context) (pgx.Tx, error)
 }
 
 // Applies all pending migrations to the database.
-func (slice MigrationSlice) ApplyAll(db *sqlx.DB, logger Logger) error {
+func (slice MigrationSlice) ApplyAll(db applyDB, logger Logger) error {
 	ctx := context.TODO()
 
-	err := tx.BeginFn(ctx, db, func(tx *sqlx.Tx) error {
-		err := EnsureSchema(tx)
+	err := pgx.BeginFunc(ctx, db, func(tx pgx.Tx) error {
+		err := EnsureSchema(ctx, tx)
 		if err != nil {
 			return err
 		}
 
-		current, err := QuerySchemaVersion(tx)
+		current, err := QuerySchemaVersion(ctx, tx)
 		if err != nil {
 			return err
 		}
@@ -154,12 +156,12 @@ func (slice MigrationSlice) ApplyAll(db *sqlx.DB, logger Logger) error {
 		for m := slice.Find(current + 1); m != nil; m = slice.Find(current + 1) {
 			logger.Printf("Applying '%s'...", m.Name)
 
-			_, err := tx.Exec(m.Up)
+			_, err := tx.Exec(ctx, m.Up)
 			if err != nil {
 				return err
 			}
 
-			if err := setSchemaVersion(tx, m.Num); err != nil {
+			if err := setSchemaVersion(ctx, tx, m.Num); err != nil {
 				return err
 			}
 

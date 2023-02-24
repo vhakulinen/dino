@@ -1,9 +1,10 @@
 package dbtest
 
 import (
+	"context"
 	"testing"
 
-	"github.com/jmoiron/sqlx"
+	"github.com/jackc/pgx/v5/pgxpool"
 
 	"github.com/vhakulinen/dino/db/utils"
 )
@@ -12,29 +13,18 @@ import (
 // Holds connection open based on `params` until test cleanup.
 //
 // Returns new ConnParmas pointed to the new database.
-func WithCreateDB(t *testing.T, driver string, params *utils.ConnectionParams, dbname string) *utils.ConnectionParams {
+func WithCreateDB(t *testing.T, ctx context.Context, params *utils.ConnectionParams, dbname string) *utils.ConnectionParams {
 	t.Helper()
 
-	mainConn, err := sqlx.Open(driver, params.ConnString())
-	if err != nil {
+	mainConn := OpenDB(t, ctx, params)
+
+	if _, err := mainConn.Exec(ctx, `CREATE DATABASE `+dbname); err != nil {
 		t.Fatalf("WithCreateDB: %v", err)
 	}
 
 	t.Cleanup(func() {
-		mainConn.Close()
-	})
-
-	if _, err := mainConn.Exec(`CREATE DATABASE ` + dbname); err != nil {
-		t.Fatalf("WithCreateDB: %v", err)
-	}
-
-	t.Cleanup(func() {
-		if _, err := mainConn.Exec(`DROP DATABASE ` + dbname); err != nil {
+		if _, err := mainConn.Exec(ctx, `DROP DATABASE `+dbname); err != nil {
 			t.Errorf("WithCreateDB: failed to drop database: %v", err)
-		}
-
-		if err := mainConn.Close(); err != nil {
-			t.Errorf("WithCreateDB: %v", err)
 		}
 	})
 
@@ -45,9 +35,9 @@ func WithCreateDB(t *testing.T, driver string, params *utils.ConnectionParams, d
 	return connParams
 }
 
-// Opens `sqlx.DB` for the duration of the test.
-func OpenDB(t *testing.T, driver string, connParams *utils.ConnectionParams) *sqlx.DB {
-	db, err := sqlx.Open(driver, connParams.ConnString())
+// Opens a database pool for the duration of the test.
+func OpenDB(t *testing.T, ctx context.Context, connParams *utils.ConnectionParams) *pgxpool.Pool {
+	db, err := pgxpool.New(ctx, connParams.ConnString())
 	if err != nil {
 		t.Fatal(err)
 	}

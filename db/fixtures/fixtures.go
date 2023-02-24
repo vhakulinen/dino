@@ -11,7 +11,8 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/jmoiron/sqlx"
+	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/vhakulinen/dino/db/utils"
 )
 
@@ -34,13 +35,18 @@ func cleanDump(dump []byte) []byte {
 	return dump
 }
 
-func LoadFixture(ctx context.Context, exec sqlx.ExtContext, fixture string) error {
-	_, err := exec.ExecContext(ctx, fixture)
+type fixtureDB interface {
+	Query(ctx context.Context, sql string, args ...any) (pgx.Rows, error)
+	Exec(ctx context.Context, sql string, arguments ...any) (pgconn.CommandTag, error)
+}
+
+func LoadFixture(ctx context.Context, conn fixtureDB, fixture string) error {
+	_, err := conn.Exec(ctx, fixture)
 	if err != nil {
 		return err
 	}
 
-	return FixSequences(ctx, exec)
+	return FixSequences(ctx, conn)
 }
 
 func DumpFixture(opts *utils.ConnectionParams) ([]byte, error) {
@@ -72,9 +78,7 @@ func DumpFixture(opts *utils.ConnectionParams) ([]byte, error) {
 	return cleanDump(out.Bytes()), nil
 }
 
-// TODO(ville): Move to the utils package?
-func queryAllTableNames(ctx context.Context, exec sqlx.QueryerContext) ([]string, error) {
-	var tables []string
+func queryAllTableNames(ctx context.Context, conn pgx.Tx) ([]string, error) {
 	query := `
 		SELECT table_schema || '.' || table_name
 		FROM information_schema.tables
@@ -82,15 +86,18 @@ func queryAllTableNames(ctx context.Context, exec sqlx.QueryerContext) ([]string
 		AND table_type = 'BASE TABLE'
 	`
 
-	err := sqlx.SelectContext(ctx, exec, &tables, query)
+	rows, err := conn.Query(ctx, query)
+	if err != nil {
+		return nil, err
+	}
 
-	return tables, err
+	return pgx.CollectRows(rows, pgx.RowTo[string])
 }
 
 // Truncates all tables (e.g. removes all data!).
 // TODO(ville): Move to the utils package?
-func TruncateAll(ctx context.Context, exec sqlx.ExtContext) error {
-	tables, err := queryAllTableNames(ctx, exec)
+func TruncateAll(ctx context.Context, conn pgx.Tx) error {
+	tables, err := queryAllTableNames(ctx, conn)
 	if err != nil {
 		return err
 	}
@@ -100,7 +107,7 @@ func TruncateAll(ctx context.Context, exec sqlx.ExtContext) error {
 	}
 
 	query := fmt.Sprintf(`TRUNCATE %s RESTART IDENTITY`, strings.Join(tables, ","))
-	_, err = exec.ExecContext(ctx, query)
+	_, err = conn.Exec(ctx, query)
 
 	return err
 }
@@ -125,12 +132,17 @@ ORDER BY S.relname;`
 
 // Attemps to fix sequences based on the current values.
 // See: https://wiki.postgresql.org/wiki/Fixing_Sequences
-func FixSequences(ctx context.Context, exec sqlx.ExtContext) error {
-	var stmts []string
-	if err := sqlx.SelectContext(ctx, exec, &stmts, sequencesQuery); err != nil {
+func FixSequences(ctx context.Context, conn fixtureDB) error {
+	rows, err := conn.Query(ctx, sequencesQuery)
+	if err != nil {
 		return err
 	}
 
-	_, err := exec.ExecContext(ctx, strings.Join(stmts, ""))
+	stmts, err := pgx.CollectRows(rows, pgx.RowTo[string])
+	if err != nil {
+		return err
+	}
+
+	_, err = conn.Exec(ctx, strings.Join(stmts, ""))
 	return err
 }

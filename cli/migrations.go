@@ -4,11 +4,10 @@ import (
 	"os"
 	"strings"
 
-	"github.com/jmoiron/sqlx"
+	"github.com/jackc/pgx/v5"
 	"github.com/spf13/cobra"
 
 	"github.com/vhakulinen/dino/db/migrations"
-	"github.com/vhakulinen/dino/db/tx"
 )
 
 func migrationsCommand(config *Config) *cobra.Command {
@@ -42,13 +41,13 @@ func migrationsCommand(config *Config) *cobra.Command {
 				return err
 			}
 
-			db, err := sqlx.Open(config.opts.dbDriver, config.ConnParams().ConnString())
+			db, err := pgx.Connect(cmd.Context(), config.ConnParams().ConnString())
 			if err != nil {
 				return err
 			}
 
-			return tx.BeginFn(cmd.Context(), db, func(tx *sqlx.Tx) error {
-				return migs.RevertCurrent(tx)
+			return pgx.BeginFunc(cmd.Context(), db, func(tx pgx.Tx) error {
+				return migs.RevertCurrent(cmd.Context(), tx)
 			})
 		},
 	}
@@ -62,7 +61,7 @@ func migrationsCommand(config *Config) *cobra.Command {
 				return err
 			}
 
-			db, err := sqlx.Open(config.opts.dbDriver, config.ConnParams().ConnString())
+			db, err := pgx.Connect(cmd.Context(), config.ConnParams().ConnString())
 			if err != nil {
 				return err
 			}

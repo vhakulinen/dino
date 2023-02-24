@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
+	"github.com/jackc/pgx/v5"
 	_ "github.com/jackc/pgx/v5/stdlib"
 
 	"github.com/vhakulinen/dino/db/dbtest"
@@ -14,12 +15,13 @@ import (
 )
 
 func TestDumpFixture(t *testing.T) {
+	ctx := context.Background()
 	connParams := dbtest.DefaultConnectionParams
 	dbname := strings.ToLower(t.Name())
 
-	db := dbtest.OpenDB(t, "pgx", dbtest.WithCreateDB(t, "pgx", &connParams, dbname))
+	db := dbtest.OpenDB(t, ctx, dbtest.WithCreateDB(t, ctx, &connParams, dbname))
 
-	_, err := db.Exec(`
+	_, err := db.Exec(ctx, `
 	CREATE TABLE foo (
 		id SERIAL PRIMARY KEY,
 		name TEXT
@@ -62,12 +64,13 @@ INSERT INTO public.foo (id, name) VALUES
 }
 
 func TestLoadFixture(t *testing.T) {
+	ctx := context.Background()
 	connParams := dbtest.DefaultConnectionParams
 	dbname := strings.ToLower(t.Name())
 
-	db := dbtest.OpenDB(t, "pgx", dbtest.WithCreateDB(t, "pgx", &connParams, dbname))
+	db := dbtest.OpenDB(t, ctx, dbtest.WithCreateDB(t, ctx, &connParams, dbname))
 
-	_, err := db.Exec(`
+	_, err := db.Exec(ctx, `
 	CREATE TABLE foo (
 		id SERIAL PRIMARY KEY,
 		name TEXT
@@ -82,22 +85,26 @@ func TestLoadFixture(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	err = fixtures.LoadFixture(context.TODO(), db, `
-	INSERT INTO bar (id, num) VALUES
-		(1, 4),
-		(2, 9),
-		(3, 10);
-	INSERT INTO foo (id, name) VALUES
-		(1, 'hey there'),
-		(2, 'well hello');
-	`)
+	err = fixtures.LoadFixture(ctx, db, `
+        INSERT INTO bar (id, num) VALUES
+            (1, 4),
+            (2, 9),
+            (3, 10);
+        INSERT INTO foo (id, name) VALUES
+            (1, 'hey there'),
+            (2, 'well hello');
+    `)
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	// Test that the sequences were reset.
-	var i int
-	if err := db.QueryRowx(`SELECT last_value FROM bar_id_seq`).Scan(&i); err != nil {
+	rows, err := db.Query(ctx, `SELECT last_value FROM bar_id_seq`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	i, err := pgx.CollectOneRow(rows, pgx.RowTo[int])
+	if err != nil {
 		t.Fatal(err)
 	}
 
@@ -105,9 +112,11 @@ func TestLoadFixture(t *testing.T) {
 		t.Errorf("Unexpected sequence value: %d", i)
 	}
 
-	if err := db.QueryRowx(`SELECT last_value FROM foo_id_seq`).Scan(&i); err != nil {
+	rows, err = db.Query(ctx, `SELECT last_value FROM foo_id_seq`)
+	if err != nil {
 		t.Fatal(err)
 	}
+	i, err = pgx.CollectOneRow(rows, pgx.RowTo[int])
 	if i != 2 {
 		t.Errorf("Unexpected sequence value: %d", i)
 	}

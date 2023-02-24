@@ -3,11 +3,14 @@ package utils
 import (
 	"context"
 
-	"github.com/jmoiron/sqlx"
+	"github.com/jackc/pgx/v5"
 )
 
-func QueryAllTableNames(ctx context.Context, exec sqlx.QueryerContext) ([]string, error) {
-	var tables []string
+type queryer interface {
+	Query(ctx context.Context, sql string, args ...any) (pgx.Rows, error)
+}
+
+func QueryAllTableNames(ctx context.Context, db queryer) ([]string, error) {
 	query := `
 		SELECT table_name
 		FROM information_schema.tables
@@ -15,7 +18,11 @@ func QueryAllTableNames(ctx context.Context, exec sqlx.QueryerContext) ([]string
 		AND table_type = 'BASE TABLE'
 	`
 
-	err := sqlx.SelectContext(ctx, exec, &tables, query)
+	rows, err := db.Query(ctx, query)
+	if err != nil {
+		return nil, err
+	}
+	tables, err := pgx.CollectRows(rows, pgx.RowTo[string])
 
 	return tables, err
 }
