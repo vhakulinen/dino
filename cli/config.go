@@ -35,7 +35,7 @@ func (c *Config) ConnParams() *utils.ConnectionParams {
 		Database: c.GetString("dino.db.database"),
 		Username: c.GetString("dino.db.username"),
 		Password: c.GetString("dino.db.password"),
-		SSLMode:  c.GetString("dino.db.sslmod"),
+		SSLMode:  c.GetString("dino.db.sslmode"),
 	}
 }
 
